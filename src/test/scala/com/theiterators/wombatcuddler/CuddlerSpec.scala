@@ -3,7 +3,6 @@ package com.theiterators.wombatcuddler
 import cats.data.Xor.{Left, Right}
 import cats.{Id, ~>}
 import com.theiterators.wombatcuddler.actions.Cuddler
-import com.theiterators.wombatcuddler.actions.Cuddler._
 import com.theiterators.wombatcuddler.domain._
 import org.scalatest.{FunSuite, Matchers}
 

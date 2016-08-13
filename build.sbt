@@ -15,10 +15,13 @@ scalacOptions := Seq(
 Revolver.enableDebugging(port = 5005, suspend = false)
 mainClass in reStart := Some("com.theiterators.wombatcuddler.main.Main")
 
+flywayUrl := "jdbc:h2:./wombatcuddlers"
+
 //integration tests
 configs(IntegrationTest)
 Defaults.itSettings
-inConfig(IntegrationTest)(ScalaFmtPlugin.configScalafmtSettings ++ Seq(
+inConfig(IntegrationTest)(ScalaFmtPlugin.configScalafmtSettings ++ FlywayPlugin.flywayBaseSettings(IntegrationTest) ++ Seq(
+  flywayUrl := "jdbc:h2:./wombatcuddlers-it",
   executeTests <<= executeTests dependsOn flywayMigrate,
   flywayMigrate <<= flywayMigrate dependsOn flywayClean)
 )
@@ -52,6 +55,6 @@ libraryDependencies ++= {
 addCompilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)
 addCompilerPlugin("org.spire-math" %% "kind-projector"  % "0.8.0")
 
-flywayUrl := "jdbc:h2:file:wombatcuddlers.db"
+
 
 
