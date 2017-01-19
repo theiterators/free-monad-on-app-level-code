@@ -1,6 +1,5 @@
 package com.theiterators.wombatcuddler
 
-import cats.data.Xor.{Left, Right}
 import cats.{Id, ~>}
 import com.theiterators.wombatcuddler.actions.Cuddler
 import com.theiterators.wombatcuddler.domain._
@@ -35,7 +34,7 @@ class CuddlerSpec extends FunSuite with Matchers {
 
   test("Trying to apply for wombat cuddler and giving invalid e-mail is a no-go") {
     applyForJob(newApplicationRequest.copy(email = Email("joe.roberts2example.com"))) foldMap testInterpreter shouldBe Left(
-        EmailFormatError)
+      EmailFormatError)
   }
 
   test("Trying to apply for wombat cuddler and giving empty name is a no-go") {
@@ -56,22 +55,22 @@ class CuddlerSpec extends FunSuite with Matchers {
 
   test("Trying to update job application with wrong data should fail") {
     updateApplication(Email("joe.roberts@example.com"), pin = PIN("1000"), UpdateApplicationRequest(newCv = Some(CV("")))).value foldMap testInterpreter shouldBe Left(
-        Empty("cv"))
+      Empty("cv"))
   }
 
   test("Trying to update job application giving wrong PIN should fail") {
     updateApplication(Email("joe.roberts@example.com"), pin = PIN("1111"), UpdateApplicationRequest()).value foldMap testInterpreter shouldBe Left(
-        IncorrectPIN)
+      IncorrectPIN)
   }
 
   test("Trying to update job application giving email that was not registered should fail") {
     updateApplication(Email("john.doe@example.com"), pin = PIN("1000"), UpdateApplicationRequest()).value foldMap testInterpreter shouldBe Left(
-        IncorrectPIN)
+      IncorrectPIN)
   }
 
   test("otherwise it should succeed") {
     updateApplication(Email("joe.roberts@example.com"), pin = PIN("1000"), UpdateApplicationRequest()).value foldMap testInterpreter shouldBe Right(
-        FakeJobApplication)
+      FakeJobApplication)
   }
 
   test("Trying to remove job application giving wrong PIN should fail") {

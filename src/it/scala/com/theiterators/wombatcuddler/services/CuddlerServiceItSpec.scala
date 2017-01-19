@@ -1,6 +1,6 @@
 package com.theiterators.wombatcuddler.services
 
-import cats.data.Xor.{Left, Right}
+import cats.syntax.either._
 import com.theiterators.WombatCuddlerServiceItSpec
 import com.theiterators.wombatcuddler.actions.Cuddler._
 import com.theiterators.wombatcuddler.domain._

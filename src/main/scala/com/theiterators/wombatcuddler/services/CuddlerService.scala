@@ -1,6 +1,5 @@
 package com.theiterators.wombatcuddler.services
 
-import cats.data.Xor
 import com.theiterators.wombatcuddler.actions.Cuddler
 import com.theiterators.wombatcuddler.actions.Cuddler._
 import com.theiterators.wombatcuddler.domain._
@@ -12,7 +11,7 @@ import scala.util.{Failure, Success}
 
 abstract class CuddlerService(jobApplicationRepository: JobApplicationRepository)(implicit executionContext: ExecutionContext)
     extends FreeService[Cuddler.Action, DBIO] {
-  def saveApplication(newApplicationRequest: NewApplicationRequest): DBIO[Error Xor JobApplication] = {
+  def saveApplication(newApplicationRequest: NewApplicationRequest): DBIO[Either[Error, JobApplication]] = {
     val pin            = PIN.generate
     val applicationRow = JobApplicationRow.fromNewApplicationRequest(newApplicationRequest, pin)
 
@@ -22,8 +21,8 @@ abstract class CuddlerService(jobApplicationRepository: JobApplicationRepository
     } yield application
 
     insertAction.asTry.flatMap {
-      case Success(right)           => DBIO.successful(Xor.Right(right))
-      case Failure(DuplicateKey(_)) => DBIO.successful(Xor.Left(DuplicateEmail))
+      case Success(right)           => DBIO.successful(Right(right))
+      case Failure(DuplicateKey(_)) => DBIO.successful(Left(DuplicateEmail))
       case Failure(other)           => DBIO.failed(other)
     }
   }
@@ -32,14 +31,14 @@ abstract class CuddlerService(jobApplicationRepository: JobApplicationRepository
 
   def removeApplication(email: Email): DBIO[Boolean] = jobApplicationRepository.delete(email).map(_ == 1)
 
-  def updateApplication(email: Email, updateApplicationRequest: UpdateApplicationRequest): DBIO[Error Xor JobApplication] =
+  def updateApplication(email: Email, updateApplicationRequest: UpdateApplicationRequest): DBIO[Either[Error, JobApplication]] =
     jobApplicationRepository
       .findByEmail(email)
       .flatMap {
-        case None => DBIO.successful(Xor.Left(EmailNotFound))
+        case None => DBIO.successful(Left(EmailNotFound))
         case Some(row) =>
           val updatedRow = row.update(updateApplicationRequest)
-          jobApplicationRepository.save(updatedRow).map(_ => Xor.Right(updatedRow))
+          jobApplicationRepository.save(updatedRow).map(_ => Right(updatedRow))
       }
       .transactionally
 }

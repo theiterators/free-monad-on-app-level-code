@@ -2,7 +2,6 @@ package com.theiterators.wombatcuddler.resources
 
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.{Directives, Route}
-import cats.data.Xor
 import com.theiterators.wombatcuddler.actions.Cuddler
 import com.theiterators.wombatcuddler.domain._
 import com.theiterators.wombatcuddler.services.Service
@@ -17,9 +16,9 @@ trait CuddlerResource extends Directives with JsonProtocol with PlayJsonSupport 
 
   val applyForJob: Route = (pathPrefix("cuddlers") & pathEndOrSingleSlash & post & entity(as[NewApplicationRequest])) { req =>
     onSuccess(cuddlerService.run(Cuddler.applyForJob(req))) {
-      case Xor.Right(_)             => complete(NoContent)
-      case Xor.Left(DuplicateEmail) => complete(Conflict)
-      case Xor.Left(error)          => complete(BadRequest -> error)
+      case Right(_)             => complete(NoContent)
+      case Left(DuplicateEmail) => complete(Conflict)
+      case Left(error)          => complete(BadRequest -> error)
     }
   }
 
@@ -30,17 +29,17 @@ trait CuddlerResource extends Directives with JsonProtocol with PlayJsonSupport 
 
       (put & entity(as[UpdateApplicationRequest])) { req =>
         onSuccess(cuddlerService.run(Cuddler.updateApplication(email, pin, req).value)) {
-          case Xor.Right(_)            => complete(NoContent)
-          case Xor.Left(IncorrectPIN)  => complete(Forbidden)
-          case Xor.Left(EmailNotFound) => complete(NotFound)
-          case Xor.Left(error)         => complete(BadRequest -> error)
+          case Right(_)            => complete(NoContent)
+          case Left(IncorrectPIN)  => complete(Forbidden)
+          case Left(EmailNotFound) => complete(NotFound)
+          case Left(error)         => complete(BadRequest -> error)
         }
       } ~ delete {
         onSuccess(cuddlerService.run(Cuddler.deleteApplication(email, pin).value)) {
-          case Xor.Right(true)                            => complete(NoContent)
-          case Xor.Right(false) | Xor.Left(EmailNotFound) => complete(NotFound)
-          case Xor.Left(IncorrectPIN)                     => complete(Forbidden)
-          case Xor.Left(error)                            => complete(BadRequest -> error)
+          case Right(true)                        => complete(NoContent)
+          case Right(false) | Left(EmailNotFound) => complete(NotFound)
+          case Left(IncorrectPIN)                 => complete(Forbidden)
+          case Left(error)                        => complete(BadRequest -> error)
         }
       }
   }

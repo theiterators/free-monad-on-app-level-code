@@ -8,7 +8,8 @@ scalacOptions := Seq(
   "-unchecked",
   "-Xlint:_",
   "-Xfatal-warnings",
-  "-encoding", "utf8"
+  "-encoding",
+  "utf8"
 )
 
 //debugging

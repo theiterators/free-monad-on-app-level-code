@@ -1,32 +1,33 @@
 package com.theiterators.wombatcuddler.actions
 
-import cats.data.Xor.{Left, Right}
-import cats.data.{Xor, XorT}
+import cats.data.EitherT
 import cats.free.Free
-import cats.std.option._
+import cats.instances.either._
+import cats.instances.option._
+import cats.syntax.either._
 import cats.syntax.traverse._
 import com.theiterators.wombatcuddler.domain._
 
 object Cuddler {
   sealed trait Action[R]
-  case class SaveApplication(req: NewApplicationRequest)                    extends Action[Error Xor JobApplication]
-  case class UpdateApplication(email: Email, req: UpdateApplicationRequest) extends Action[Error Xor JobApplication]
+  case class SaveApplication(req: NewApplicationRequest)                    extends Action[Either[Error, JobApplication]]
+  case class UpdateApplication(email: Email, req: UpdateApplicationRequest) extends Action[Either[Error, JobApplication]]
   case class RemoveApplication(email: Email)                                extends Action[Boolean]
   case class CheckPIN(email: Email, pin: PIN)                               extends Action[Boolean]
 
   type Program[A]   = Free[Action, A]
-  type ProgramEx[A] = XorT[Program, Error, A]
+  type ProgramEx[A] = EitherT[Program, Error, A]
 
-  private def execute[A](action: Action[A])               = Free.liftF(action)
-  private def returns[A](value: A): Program[A]            = Free.pure(value)
-  private def fail[A](error: Error): Program[Error Xor A] = returns(Left(error))
+  private def execute[A](action: Action[A])                    = Free.liftF(action)
+  private def returns[A](value: A): Program[A]                 = Free.pure(value)
+  private def fail[A](error: Error): Program[Either[Error, A]] = returns(Left(error))
 
-  private def executeOrFail[A](action: Action[Error Xor A]): ProgramEx[A] = XorT(execute(action))
-  private def executeRight[A](action: Action[A]): ProgramEx[A]            = XorT.right(execute(action))
-  private def returnOrFail[A](value: Error Xor A): ProgramEx[A]           = XorT.fromXor(value)
-  private def throws[A](error: Error): ProgramEx[A]                       = XorT(fail(error))
+  private def executeOrFail[A](action: Action[Either[Error, A]]): ProgramEx[A] = EitherT(execute(action))
+  private def executeRight[A](action: Action[A]): ProgramEx[A]                 = EitherT.right(execute(action))
+  private def returnOrFail[A](value: Either[Error, A]): ProgramEx[A]           = EitherT.fromEither(value)
+  private def throws[A](error: Error): ProgramEx[A]                            = EitherT(fail(error))
 
-  def applyForJob(req: NewApplicationRequest): Program[Error Xor JobApplication] = validate(req) match {
+  def applyForJob(req: NewApplicationRequest): Program[Either[Error, JobApplication]] = validate(req) match {
     case Left(error) => fail(error)
     case Right(_)    => execute(SaveApplication(req))
   }
@@ -45,14 +46,14 @@ object Cuddler {
       result     <- if (correctPIN) executeRight(RemoveApplication(email)) else throws(IncorrectPIN)
     } yield result
 
-  private def validate(request: UpdateApplicationRequest): RequestError Xor UpdateApplicationRequest =
+  private def validate(request: UpdateApplicationRequest): Either[RequestError, UpdateApplicationRequest] =
     for {
       _ <- request.newFullName.traverse(validateFullName)
       _ <- request.newCv.traverse(validateCv)
       _ <- request.newMotivationLetter.traverse(validateLetter)
     } yield request
 
-  private def validate(request: NewApplicationRequest): RequestError Xor NewApplicationRequest =
+  private def validate(request: NewApplicationRequest): Either[RequestError, NewApplicationRequest] =
     for {
       _ <- validateEmail(request.email)
       _ <- validateFullName(request.fullName)

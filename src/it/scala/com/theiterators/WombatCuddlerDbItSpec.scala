@@ -24,6 +24,6 @@ object WombatCuddlerDbItSpec {
 trait WombatCuddlerDbItSpec extends WombatCuddlerItSpec {
   import WombatCuddlerDbItSpec._
 
-  override lazy val db = Database.forDriver(new org.h2.Driver, "jdbc:h2:./wombatcuddlers-it")
+  override lazy val db                               = Database.forDriver(new org.h2.Driver, "jdbc:h2:./wombatcuddlers-it")
   protected def testWithRollback[A](action: DBIO[A]) = await(db runWithRollback action)
 }
